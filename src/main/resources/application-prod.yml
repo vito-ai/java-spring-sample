@@ -1,0 +1,14 @@
+spring:
+
+  config:
+    name: secondtutorial
+    activate:
+      on-profile: prod
+
+  servlet:
+    multipart:
+      max-file-size: 200MB
+
+vito:
+  client_id: ${VITO_CLIENT_ID}
+  client_secret: ${VITO_CLIENT_SECRET}

@@ -9,13 +9,12 @@ import okio.ByteString;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -43,15 +42,21 @@ public class TutorialService {
     private String transcribeId = null;
     private String accessToken = null;
 
+    @Value("${vito.client_id}")
+    String client_id;
+
+    @Value("${vito.client_secret}")
+    String client_secret;
 
     public String getAccessToken(){
         WebClient webClient = WebClient.builder()
                 .baseUrl("https://openapi.vito.ai")
                 .build();
 
+
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-        formData.add("client_id","{YOUR_CLIENT_ID}");
-        formData.add("client_secret", "{YOUR_CLIENT_SECRET}");
+        formData.add("client_id", client_id);
+        formData.add("client_secret", client_secret);
 
 
         String response = webClient
@@ -121,16 +126,17 @@ public class TutorialService {
         log.info("transcribe 요청 id : " + jsonObject.getString("id"));
 
         stopPolling = false;
-        Thread.sleep(10);
         transcribeId = jsonObject.getString("id");
         startPolling();
     }
 
 
-    @Async
-    @Scheduled(fixedRate = 5000) // 5초마다 실행 (주기는 필요에 따라 조절)
-    public void startPolling() {
+
+     // 5초마다 실행 (주기는 필요에 따라 조절)
+    public void startPolling() throws InterruptedException {
         log.info("Polling 함수 첫 시작");
+        String response = null;
+        Thread.sleep(5000);
         while (!stopPolling) {
             log.info("while polling 시작 반복중");
             WebClient webClient = WebClient.builder()
@@ -140,12 +146,11 @@ public class TutorialService {
 
 
             String uri = "/transcribe/" + transcribeId;
-            String response = webClient.get()
+            response = webClient.get()
                     .uri(uri)
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
-            log.info("get 요청 날림");
 
 
 
@@ -162,7 +167,9 @@ public class TutorialService {
             }
             log.info("while polling 끝 반복중");
         }
+
         log.info("폴링함수 끝");
+        log.info(response.toString());
     }
 
 
